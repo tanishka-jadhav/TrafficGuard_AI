@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<script>
+  if (!sessionStorage.getItem("tg_auth")) window.location.replace("login.html");
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TrafficGuard AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+/* ════════════════════════════════════════════
+   TRAFFICGUARD AI — COMMAND INTERFACE
+   Aesthetic: Military/Tactical Dark
+════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:     #05080f;
+  --ink2:    #0b1120;
+  --ink3:    #111d30;
+  --ink4:    #162035;
+  --cyan:    #0df2c8;
+  --cyan2:   #08c9a6;
+  --amber:   #f5a623;
+  --red:     #ff3b5c;
+  --green:   #2dff7f;
+  --blue:    #4da6ff;
+  --wire:    rgba(13,242,200,0.10);
+  --wire2:   rgba(13,242,200,0.06);
+  --txt:     #b8cfe8;
+  --txt2:    #4e6d8c;
+  --fw:      310px;
+  --fmono:   'JetBrains Mono', monospace;
+  --fhead:   'Syne', sans-serif;
+}
+
+html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--txt); font-family: var(--fmono); }
+
+/* ── NOISE GRAIN ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.018;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── HEADER ── */
+.hd {
+  position:relative; z-index:100; height:52px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px;
+  background: linear-gradient(180deg, rgba(13,242,200,0.05) 0%, transparent 100%);
+  border-bottom: 1px solid var(--wire);
+}
+.hd-logo { display:flex; align-items:center; gap:10px; }
+.hd-icon {
+  width:34px; height:34px; border:1.5px solid var(--cyan); border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(13,242,200,0.07);
+  box-shadow: 0 0 12px rgba(13,242,200,0.2), inset 0 0 8px rgba(13,242,200,0.05);
+}
+.hd-icon svg { width:16px; height:16px; }
+.hd-name { font-family:var(--fhead); font-size:17px; font-weight:800; color:#fff; letter-spacing:.5px; }
+.hd-name em { color:var(--cyan); font-style:normal; }
+.hd-sub { font-size:8px; letter-spacing:3px; color:var(--txt2); text-transform:uppercase; margin-top:1px; }
+.hd-right { display:flex; align-items:center; gap:16px; }
+.hd-live {
+  display:flex; align-items:center; gap:6px; font-size:9px; letter-spacing:2.5px;
+  color:var(--green); border:1px solid rgba(45,255,127,0.25); padding:4px 10px; border-radius:2px;
+}
+.dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:blink 1.4s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hd-clock { font-size:12px; color:var(--cyan); letter-spacing:1px; }
+
+/* ── LAYOUT ── */
+.app { display:grid; grid-template-columns:var(--fw) 1fr var(--fw); height:calc(100vh - 52px); }
+
+/* ── PANELS ── */
+.pnl {
+  background:var(--ink2); overflow-y:auto; padding:14px;
+  scrollbar-width:thin; scrollbar-color:var(--wire) transparent;
+}
+.pnl::-webkit-scrollbar { width:3px; }
+.pnl::-webkit-scrollbar-thumb { background:var(--wire); }
+.pnl-l { border-right:1px solid var(--wire); }
+.pnl-r { border-left:1px solid var(--wire); }
+
+.sec-hd {
+  display:flex; align-items:center; gap:7px;
+  font-family:var(--fhead); font-size:10px; font-weight:700;
+  letter-spacing:3px; color:var(--cyan); text-transform:uppercase;
+  border-bottom:1px solid var(--wire); padding-bottom:10px; margin-bottom:14px;
+}
+.sec-hd svg { width:13px; height:13px; flex-shrink:0; }
+
+/* ── FORM ── */
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.fg { margin-bottom:12px; }
+.lbl {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:8px; letter-spacing:2px; color:var(--txt2); text-transform:uppercase; margin-bottom:5px;
+}
+.lbl-val { color:var(--cyan); font-size:9px; }
+.inp, select.inp {
+  width:100%; background:var(--ink3); border:1px solid var(--wire);
+  color:var(--txt); padding:7px 10px; font-family:var(--fmono); font-size:11px;
+  border-radius:2px; outline:none; transition:border-color .2s, box-shadow .2s;
+}
+.inp:focus, select.inp:focus {
+  border-color:var(--cyan);
+  box-shadow:0 0 0 2px rgba(13,242,200,.07), 0 0 12px rgba(13,242,200,.08);
+}
+select.inp option { background:var(--ink3); }
+.inp-row { display:flex; gap:6px; }
+.inp-row .inp { flex:1; }
+
+.loc-btn {
+  flex-shrink:0; width:32px; height:32px; background:var(--ink3);
+  border:1px solid var(--wire); border-radius:2px; color:var(--cyan);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.loc-btn:hover { border-color:var(--cyan); background:rgba(13,242,200,.08); }
+.loc-btn svg { width:14px; height:14px; }
+.coords { font-size:9px; color:var(--cyan2); margin-top:4px; letter-spacing:.5px; }
+
+/* ── SLIDER ── */
+.slider {
+  width:100%; height:2px; -webkit-appearance:none; appearance:none;
+  background:var(--ink3); border-radius:1px; outline:none; cursor:pointer;
+  margin-top:4px;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:13px; height:13px; border-radius:50%;
+  background:var(--cyan); cursor:pointer;
+  box-shadow:0 0 0 2px rgba(13,242,200,.2), 0 0 10px rgba(13,242,200,.5);
+}
+
+/* ── ANALYZE BUTTON ── */
+.btn-go {
+  width:100%; padding:11px; margin:4px 0 14px;
+  background:linear-gradient(135deg, #08c9a6 0%, #0df2c8 100%);
+  border:none; border-radius:2px; cursor:pointer;
+  font-family:var(--fhead); font-size:14px; font-weight:800;
+  letter-spacing:3px; color:var(--ink); display:flex; align-items:center;
+  justify-content:center; gap:8px; position:relative; overflow:hidden;
+  transition:all .25s;
+}
+.btn-go::before {
+  content:''; position:absolute; top:0; left:-100%;
+  width:100%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition:left .4s;
+}
+.btn-go:hover::before { left:100%; }
+.btn-go:hover { box-shadow:0 0 24px rgba(13,242,200,.4); transform:translateY(-1px); }
+.btn-go.loading { opacity:.7; pointer-events:none; }
+.btn-go svg { width:15px; height:15px; }
+
+/* ── RESULT CARD ── */
+.result { background:var(--ink3); border:1px solid var(--wire); border-radius:3px; padding:13px; }
+.result.hidden { display:none; }
+.result-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:11px; }
+.r-lbl { font-size:8px; letter-spacing:2px; color:var(--txt2); text-transform:uppercase; }
+.r-badge {
+  font-family:var(--fhead); font-size:12px; font-weight:700; letter-spacing:2px;
+  padding:2px 9px; border:1px solid currentColor; border-radius:2px;
+}
+
+/* GAUGE */
+.gauge-area { text-align:center; position:relative; margin-bottom:8px; }
+#gaugeCanvas { display:block; margin:0 auto; }
+.gauge-num {
+  position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+  font-family:var(--fhead); font-size:28px; font-weight:800; color:#fff; line-height:1;
+}
+.gauge-cap { font-size:8px; letter-spacing:1.5px; color:var(--txt2); margin-top:2px; }
+
+.r-prob { text-align:center; margin:8px 0; }
+.r-prob-val { font-family:var(--fhead); font-size:22px; font-weight:700; }
+.r-prob-lbl { font-size:8px; letter-spacing:1.5px; color:var(--txt2); }
+
+.chips { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+.chip {
+  font-size:8px; letter-spacing:1px; padding:3px 7px; border-radius:2px; border:1px solid;
+  text-transform:uppercase;
+}
+.chip.critical { color:var(--red); border-color:var(--red); background:rgba(255,59,92,.07); }
+.chip.high     { color:var(--amber); border-color:var(--amber); background:rgba(245,166,35,.07); }
+.chip.medium   { color:#ffd32a; border-color:#ffd32a; background:rgba(255,211,42,.07); }
+.chip.low      { color:var(--green); border-color:var(--green); background:rgba(45,255,127,.07); }
+
+.rec {
+  font-size:11px; line-height:1.55; color:var(--txt);
+  border-left:2px solid var(--cyan); padding:7px 9px;
+  background:rgba(13,242,200,.04); border-radius:0 2px 2px 0; margin-top:8px;
+}
+
+/* ── MAP ── */
+.map-wrap { position:relative; }
+#map { width:100%; height:100%; }
+
+.map-ctrl {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  z-index:1000; display:flex; align-items:center; gap:8px;
+  background:rgba(5,8,15,.92); border:1px solid var(--wire);
+  padding:6px 10px; border-radius:3px; backdrop-filter:blur(12px);
+}
+.tabs { display:flex; gap:3px; }
+.tab {
+  font-family:var(--fmono); font-size:9px; letter-spacing:2px; text-transform:uppercase;
+  padding:5px 11px; border-radius:2px; border:1px solid var(--wire);
+  background:transparent; color:var(--txt2); cursor:pointer; transition:all .2s;
+}
+.tab.on { background:var(--cyan); color:var(--ink); border-color:var(--cyan); font-weight:500; }
+.tab:hover:not(.on) { border-color:var(--cyan); color:var(--cyan); }
+
+.legend { display:flex; gap:5px; }
+.leg { font-size:8px; letter-spacing:1px; padding:2px 6px; border-radius:2px; }
+.leg.lo { background:rgba(45,255,127,.2);  color:#2dff7f; }
+.leg.md { background:rgba(255,211,42,.2);  color:#ffd32a; }
+.leg.hi { background:rgba(245,166,35,.2);  color:#f5a623; }
+.leg.cr { background:rgba(255,59,92,.2);   color:#ff3b5c; }
+
+.map-tip {
+  position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  z-index:1000; font-size:9px; letter-spacing:2px; color:var(--txt2);
+  background:rgba(5,8,15,.88); border:1px solid var(--wire);
+  padding:4px 12px; border-radius:2px; pointer-events:none; white-space:nowrap;
+}
+
+/* ── ANALYTICS ── */
+.chart-blk { margin-bottom:18px; }
+.chart-cap { font-size:8px; letter-spacing:2px; color:var(--txt2); text-transform:uppercase; margin-bottom:7px; }
+
+.hs-row {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 0; border-bottom:1px solid var(--wire2);
+}
+.hs-row:last-child { border-bottom:none; }
+.hs-name { font-size:11px; color:var(--txt); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hs-track { flex:1; height:2px; background:var(--ink4); border-radius:1px; }
+.hs-fill  { height:100%; border-radius:1px; }
+.hs-score { font-size:11px; font-weight:500; width:28px; text-align:right; flex-shrink:0; }
+
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:6px; }
+.sbox {
+  background:var(--ink3); border:1px solid var(--wire); border-radius:2px; padding:9px 11px;
+}
+.sbox-val { font-family:var(--fhead); font-size:20px; font-weight:700; color:var(--cyan); line-height:1; }
+.sbox-lbl { font-size:8px; letter-spacing:1.5px; color:var(--txt2); margin-top:3px; }
+
+/* ── MAP OVERRIDES ── */
+.leaflet-container { background:#070e1b !important; }
+.leaflet-tile { filter:brightness(.45) saturate(.3) hue-rotate(190deg) contrast(1.1); }
+.leaflet-popup-content-wrapper {
+  background:var(--ink2) !important; border:1px solid var(--wire) !important;
+  color:var(--txt) !important; border-radius:3px !important;
+  box-shadow:0 6px 24px rgba(0,0,0,.7), 0 0 0 1px var(--wire) !important;
+}
+.leaflet-popup-tip { background:var(--ink2) !important; }
+.leaflet-control-zoom a { background:var(--ink2) !important; color:var(--cyan) !important; border-color:var(--wire) !important; }
+.leaflet-control-attribution { background:rgba(5,8,15,.6) !important; color:var(--txt2) !important; font-size:9px !important; }
+
+/* ── HOTSPOT MARKER ── */
+.hs-mk {
+  width:36px; height:36px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fhead); font-weight:800; font-size:11px;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-thumb { background:var(--wire); }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="hd">
+  <div class="hd-logo">
+    <div class="hd-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 20h20L12 2z" stroke="#0df2c8" stroke-width="1.5"/>
+        <path d="M12 9v5M12 16.5v.5" stroke="#0df2c8" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="hd-name">TrafficGuard <em>AI</em></div>
+      <div class="hd-sub">Smart City Accident Risk Prediction</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <div class="hd-live"><span class="dot"></span>LIVE SYSTEM</div>
+    <div class="hd-clock" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ── BODY ── -->
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="pnl pnl-l">
+    <div class="sec-hd">
+      <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" stroke="#0df2c8" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" stroke="#0df2c8" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" stroke="#0df2c8" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" stroke="#ff3b5c" stroke-width="1.3"/></svg>
+      Prediction Controls
+    </div>
+
+    <!-- LOCATION -->
+    <div class="fg">
+      <div class="lbl">Location</div>
+      <div class="inp-row">
+        <input type="text" id="locSearch" class="inp" placeholder="Search city or address…"/>
+        <button class="loc-btn" id="btnGeo" title="My location">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="coords" id="coordsLbl">Lat: 18.5204 &nbsp;|&nbsp; Lng: 73.8567</div>
+    </div>
+
+    <!-- DATE / WEATHER -->
+    <div class="row2">
+      <div class="fg">
+        <div class="lbl">Date &amp; Time</div>
+        <input type="datetime-local" id="inpDT" class="inp"/>
+      </div>
+      <div class="fg">
+        <div class="lbl">Weather</div>
+        <select id="inpWeather" class="inp">
+          <option>Clear</option><option>Rain</option>
+          <option>Fog</option><option>Snow</option><option>Storm</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ROAD / VISIBILITY -->
+    <div class="row2">
+      <div class="fg">
+        <div class="lbl">Road Type</div>
+        <select id="inpRoad" class="inp">
+          <option>Urban</option><option>Highway</option>
+          <option>Rural</option><option>Intersection</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="lbl">Visibility <span class="lbl-val" id="visLbl">80%</span></div>
+        <input type="range" id="inpVis" class="slider" min="10" max="100" value="80"/>
+      </div>
+    </div>
+
+    <!-- DENSITY / SPEED -->
+    <div class="row2">
+      <div class="fg">
+        <div class="lbl">Traffic Density <span class="lbl-val" id="tdLbl">50%</span></div>
+        <input type="range" id="inpTD" class="slider" min="0" max="100" value="50"/>
+      </div>
+      <div class="fg">
+        <div class="lbl">Avg Speed <span class="lbl-val" id="spLbl">50 km/h</span></div>
+        <input type="range" id="inpSP" class="slider" min="10" max="120" value="50"/>
+      </div>
+    </div>
+
+    <button class="btn-go" id="btnAnalyze">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      ANALYZE RISK
+    </button>
+
+    <!-- RESULT -->
+    <div class="result hidden" id="resultCard">
+      <div class="result-top">
+        <span class="r-lbl">Risk Assessment</span>
+        <span class="r-badge" id="rLevel">—</span>
+      </div>
+      <div class="gauge-area">
+        <canvas id="gaugeCanvas" width="190" height="105"></canvas>
+        <div class="gauge-num" id="rScore">—</div>
+      </div>
+      <div class="gauge-cap">RISK SCORE / 100</div>
+      <div class="r-prob">
+        <div class="r-prob-val" id="rProb">—</div>
+        <div class="r-prob-lbl">ACCIDENT PROBABILITY</div>
+      </div>
+      <div class="chips" id="rChips"></div>
+      <div class="rec" id="rRec"></div>
+    </div>
+  </div>
+
+  <!-- MAP CENTER -->
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-ctrl">
+      <div class="tabs">
+        <button class="tab on" data-t="heatmap">HEATMAP</button>
+        <button class="tab" data-t="hotspots">HOTSPOTS</button>
+        <button class="tab" data-t="live">LIVE</button>
+      </div>
+      <div class="legend">
+        <span class="leg lo">LOW</span>
+        <span class="leg md">MED</span>
+        <span class="leg hi">HIGH</span>
+        <span class="leg cr">CRIT</span>
+      </div>
+    </div>
+    <div class="map-tip" id="mapTip">Click map to set prediction location</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="pnl pnl-r">
+    <div class="sec-hd">
+      <svg viewBox="0 0 16 16" fill="none"><polyline points="1,12 5,6 9,9 15,2" stroke="#0df2c8" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Analytics
+    </div>
+
+    <div class="chart-blk">
+      <div class="chart-cap">Hourly Risk Curve</div>
+      <canvas id="chartTime" height="140"></canvas>
+    </div>
+
+    <div class="chart-blk">
+      <div class="chart-cap">Risk by Weather</div>
+      <canvas id="chartWeather" height="120"></canvas>
+    </div>
+
+    <div class="chart-blk" id="hsTable">
+      <div class="chart-cap">Top Risk Hotspots</div>
+      <div id="hsRows"><div style="font-size:9px;color:var(--txt2);padding:6px 0">Loading…</div></div>
+    </div>
+
+    <div class="stats">
+      <div class="sbox"><div class="sbox-val">4,917</div><div class="sbox-lbl">Records Analyzed</div></div>
+      <div class="sbox"><div class="sbox-val">91.4%</div><div class="sbox-lbl">Model Accuracy</div></div>
+      <div class="sbox"><div class="sbox-val">23</div><div class="sbox-lbl">High-Risk Zones</div></div>
+      <div class="sbox"><div class="sbox-val" id="alertCount">7</div><div class="sbox-lbl">Active Alerts</div></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════
+   TRAFFICGUARD AI — APP LOGIC
+   Flask API: http://127.0.0.1:5000
+════════════════════════════════════════ */
+const API = 'http://127.0.0.1:5000';
+
+// ── State ──────────────────────────────
+let lat = 18.5204, lng = 73.8567;
+let map, heatLayer, markerLayer;
+let activeTab = 'heatmap';
+let chartTime = null, chartWeather = null;
+
+// ── Boot ───────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  clock();
+  setDefaultDT();
+  initSliders();
+  initMap();
+  initTabs();
+  loadTimeSeries();
+  buildWeatherChart();
+  loadHotspotRows();
+  document.getElementById('btnAnalyze').addEventListener('click', analyze);
+  document.getElementById('btnGeo').addEventListener('click', geoLocate);
+  document.getElementById('locSearch').addEventListener('keydown', e => e.key === 'Enter' && geocode());
+  document.getElementById('inpWeather').addEventListener('change', () => {
+    loadTimeSeries();
+    if (activeTab === 'heatmap') loadHeatmap();
+  });
+});
+
+// ── Clock ──────────────────────────────
+function clock() {
+  const el = document.getElementById('clock');
+  const tick = () => el.textContent = new Date().toLocaleTimeString();
+  tick(); setInterval(tick, 1000);
+}
+
+function setDefaultDT() {
+  const n = new Date();
+  const pad = x => String(x).padStart(2,'0');
+  document.getElementById('inpDT').value =
+    `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+
+// ── Sliders ────────────────────────────
+function initSliders() {
+  [
+    ['inpVis','visLbl', v=>`${v}%`],
+    ['inpTD', 'tdLbl',  v=>`${v}%`],
+    ['inpSP', 'spLbl',  v=>`${v} km/h`],
+  ].forEach(([id,lbl,fmt]) => {
+    const el = document.getElementById(id);
+    document.getElementById(lbl).textContent = fmt(el.value);
+    el.addEventListener('input', () => document.getElementById(lbl).textContent = fmt(el.value));
+  });
+}
+
+// ── Map ────────────────────────────────
+function initMap() {
+  map = L.map('map', { zoomControl:true }).setView([lat, lng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:18
+  }).addTo(map);
+
+  heatLayer = null;
+  markerLayer = L.layerGroup().addTo(map);
+
+  map.on('click', e => {
+    lat = e.latlng.lat; lng = e.latlng.lng;
+    updateCoords();
+    document.getElementById('mapTip').textContent = `Selected: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    if (activeTab === 'heatmap')   loadHeatmap();
+    else if (activeTab === 'hotspots') loadHotspotMarkers();
+  });
+
+  loadHeatmap();
+}
+
+function updateCoords() {
+  document.getElementById('coordsLbl').innerHTML = `Lat: ${lat.toFixed(4)} &nbsp;|&nbsp; Lng: ${lng.toFixed(4)}`;
+}
+
+// ── Tabs ───────────────────────────────
+function initTabs() {
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+      btn.classList.add('on');
+      activeTab = btn.dataset.t;
+      clearLayers();
+      if (activeTab === 'heatmap')  loadHeatmap();
+      else if (activeTab === 'hotspots') loadHotspotMarkers();
+      else loadLiveMarkers();
+    });
+  });
+}
+
+function clearLayers() {
+  markerLayer.clearLayers();
+  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+}
+
+// ── HEATMAP (using leaflet.heat for smooth gradient) ──────────────────────────
+async function loadHeatmap() {
+  const weather = document.getElementById('inpWeather').value;
+  const dt = document.getElementById('inpDT').value;
+  const hour = dt ? new Date(dt).getHours() : new Date().getHours();
+
+  try {
+    const res = await fetch(`${API}/api/heatmap?lat=${lat}&lng=${lng}&hour=${hour}&weather=${encodeURIComponent(weather)}`);
+    if (!res.ok) throw new Error('API offline');
+    const data = await res.json();
+    renderHeatmap(data.points);
+  } catch(e) {
+    // Fallback: generate client-side demo data
+    renderHeatmap(demoHeatData(lat, lng, hour));
+  }
+}
+
+function renderHeatmap(points) {
+  if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+  markerLayer.clearLayers();
+
+  // Convert to leaflet-heat format [lat, lng, intensity]
+  const heatData = points.map(p => [p.lat, p.lng, p.risk / 100]);
+
+  heatLayer = L.heatLayer(heatData, {
+    radius: 35,
+    blur: 25,
+    maxZoom: 17,
+    max: 1.0,
+    minOpacity: 0.3,
+    gradient: {
+      0.0:  '#001a0a',
+      0.25: '#2dff7f',
+      0.45: '#ffd32a',
+      0.65: '#f5a623',
+      0.80: '#ff3b5c',
+      1.0:  '#ff003c'
+    }
+  }).addTo(map);
+}
+
+// Client-side fallback heatmap data
+function demoHeatData(clat, clng, hour) {
+  const pts = [];
+  const base = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19) ? 60 : 35;
+  for (let i = -10; i <= 10; i++) {
+    for (let j = -10; j <= 10; j++) {
+      const r = Math.min(100, Math.max(0, base + (Math.random()-0.5)*40 + (Math.abs(i)+Math.abs(j) < 3 ? 20 : 0)));
+      pts.push({ lat: clat + i*0.007, lng: clng + j*0.007, risk: r });
+    }
+  }
+  return pts;
+}
+
+// ── HOTSPOT MARKERS ─────────────────────
+async function loadHotspotMarkers() {
+  try {
+    const res = await fetch(`${API}/api/hotspots?lat=${lat}&lng=${lng}`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    markerLayer.clearLayers();
+    data.hotspots.forEach(h => drawHotspot(h));
+  } catch {
+    const demo = [
+      {name:'Main Junction', lat:lat+0.022, lng:lng+0.016, risk:82, accidents_ytd:47},
+      {name:'Highway Merge',  lat:lat-0.016, lng:lng+0.032, risk:76, accidents_ytd:38},
+      {name:'School Zone',   lat:lat+0.011, lng:lng-0.021, risk:68, accidents_ytd:29},
+      {name:'Rail Crossing', lat:lat-0.026, lng:lng-0.011, risk:71, accidents_ytd:33},
+      {name:'Market Circle', lat:lat+0.031, lng:lng-0.026, risk:63, accidents_ytd:22},
+    ];
+    markerLayer.clearLayers();
+    demo.forEach(h => drawHotspot(h));
+  }
+}
+
+function drawHotspot(h) {
+  const c = riskColor(h.risk);
+  const icon = L.divIcon({
+    className:'',
+    html:`<div class="hs-mk" style="background:${c}18;border:2px solid ${c};color:${c};box-shadow:0 0 16px ${c}44">${h.risk}</div>`,
+    iconSize:[36,36], iconAnchor:[18,18]
+  });
+  L.marker([h.lat, h.lng], {icon})
+    .bindPopup(`<div style="font-family:'Syne',sans-serif;min-width:150px">
+      <div style="font-size:14px;font-weight:700;color:${c}">${h.name}</div>
+      <div style="font-size:11px;color:#b8cfe8;margin-top:5px">Risk: <b style="color:${c}">${h.risk}/100</b></div>
+      <div style="font-size:11px;color:#b8cfe8">Accidents YTD: <b>${h.accidents_ytd}</b></div>
+    </div>`)
+    .addTo(markerLayer);
+}
+
+// ── LIVE TRAFFIC ───────────────────────
+function loadLiveMarkers() {
+  markerLayer.clearLayers();
+  for (let i = 0; i < 28; i++) {
+    const plat = lat + (Math.random()-.5)*.09;
+    const plng = lng + (Math.random()-.5)*.09;
+    const spd  = Math.floor(Math.random()*85+10);
+    const c    = spd > 60 ? '#2dff7f' : spd > 30 ? '#ffd32a' : '#ff3b5c';
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="color:${c};font-size:13px;text-shadow:0 0 8px ${c};transform:rotate(${Math.floor(Math.random()*360)}deg)">▲</div>`,
+      iconSize:[14,14], iconAnchor:[7,7]
+    });
+    L.marker([plat,plng],{icon})
+      .bindPopup(`<span style="font-family:'JetBrains Mono';font-size:10px;color:#b8cfe8">${spd} km/h</span>`)
+      .addTo(markerLayer);
+  }
+}
+
+// ── HOTSPOT TABLE (right panel) ─────────
+async function loadHotspotRows() {
+  let spots;
+  try {
+    const res = await fetch(`${API}/api/hotspots?lat=${lat}&lng=${lng}`);
+    const data = await res.json();
+    spots = data.hotspots;
+  } catch {
+    spots = [
+      {name:'Main Junction', risk:82},{name:'Highway Merge', risk:76},
+      {name:'Rail Crossing', risk:71},{name:'School Zone', risk:68},{name:'Market Circle', risk:63}
+    ];
+  }
+  document.getElementById('hsRows').innerHTML = spots.map(h => {
+    const c = riskColor(h.risk);
+    return `<div class="hs-row">
+      <span class="hs-name">${h.name}</span>
+      <div class="hs-track"><div class="hs-fill" style="width:${h.risk}%;background:${c}"></div></div>
+      <span class="hs-score" style="color:${c}">${h.risk}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── TIME SERIES CHART ──────────────────
+async function loadTimeSeries() {
+  let data;
+  try {
+    const w = document.getElementById('inpWeather').value;
+    const r = document.getElementById('inpRoad').value;
+    const res = await fetch(`${API}/api/timeseries?weather=${encodeURIComponent(w)}&road_type=${encodeURIComponent(r)}`);
+    data = (await res.json()).data;
+  } catch {
+    // Fallback demo
+    data = Array.from({length:24}, (_,h) => {
+      const rush = (h>=7&&h<=9)||(h>=17&&h<=19);
+      return {hour:h, label:`${String(h).padStart(2,'0')}:00`, risk: rush?65+Math.random()*20:25+Math.random()*25, probability: rush?55+Math.random()*20:15+Math.random()*20};
+    });
+  }
+
+  const ctx = document.getElementById('chartTime').getContext('2d');
+  if (chartTime) chartTime.destroy();
+  chartTime = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels: data.map(d => d.hour%4===0?d.label:''),
+      datasets:[
+        {label:'Risk',data:data.map(d=>d.risk),borderColor:'#0df2c8',backgroundColor:'rgba(13,242,200,0.05)',borderWidth:1.8,fill:true,tension:.4,pointRadius:0},
+        {label:'Prob%',data:data.map(d=>d.probability),borderColor:'#ff3b5c',backgroundColor:'rgba(255,59,92,0.04)',borderWidth:1.2,fill:true,tension:.4,pointRadius:0,borderDash:[4,3]}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4e6d8c',font:{family:'JetBrains Mono',size:8}}},
+        y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4e6d8c',font:{family:'JetBrains Mono',size:8},stepSize:25}}
+      }
+    }
+  });
+}
+
+// ── WEATHER CHART ──────────────────────
+function buildWeatherChart() {
+  const ctx = document.getElementById('chartWeather').getContext('2d');
+  const lbls = ['Clear','Rain','Fog','Snow','Storm'];
+  const vals = [22,46,60,72,89];
+  const cols = ['#2dff7f','#0df2c8','#ffd32a','#f5a623','#ff3b5c'];
+  chartWeather = new Chart(ctx, {
+    type:'bar',
+    data:{labels:lbls, datasets:[{data:vals,backgroundColor:cols.map(c=>c+'44'),borderColor:cols,borderWidth:1.5,borderRadius:2}]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#4e6d8c',font:{family:'JetBrains Mono',size:8}}},
+        y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#4e6d8c',font:{family:'JetBrains Mono',size:8},stepSize:25}}
+      }
+    }
+  });
+}
+
+// ── ANALYZE ────────────────────────────
+async function analyze() {
+  const btn = document.getElementById('btnAnalyze');
+  btn.textContent = '⚡ ANALYZING…'; btn.classList.add('loading');
+
+  const dt = new Date(document.getElementById('inpDT').value || new Date());
+  const payload = {
+    hour: dt.getHours(), day_of_week: dt.getDay(), month: dt.getMonth()+1,
+    weather:          document.getElementById('inpWeather').value,
+    traffic_density:  +document.getElementById('inpTD').value,
+    speed_avg:        +document.getElementById('inpSP').value,
+    road_type:        document.getElementById('inpRoad').value,
+    visibility:       +document.getElementById('inpVis').value,
+  };
+
+  let result;
+  try {
+    const res = await fetch(`${API}/api/predict`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    result = await res.json();
+  } catch {
+    // Offline demo result
+    const s = 35 + Math.random()*50;
+    result = {
+      risk_score: +s.toFixed(1),
+      accident_probability: +(s*.8+Math.random()*10).toFixed(1),
+      risk_level: s<30?'LOW':s<55?'MODERATE':s<75?'HIGH':'CRITICAL',
+      risk_color: s<30?'#2dff7f':s<55?'#ffd32a':s<75?'#f5a623':'#ff3b5c',
+      contributing_factors: [{label:'Demo Mode (API offline)',impact:'medium'}],
+      recommendation:'Start Flask backend for real predictions: python app.py'
+    };
+  }
+
+  showResult(result);
+
+  // Drop pin
+  const icon = L.divIcon({
+    className:'',
+    html:`<div style="width:16px;height:16px;border-radius:50%;background:${result.risk_color};border:2px solid #fff;box-shadow:0 0 14px ${result.risk_color}"></div>`,
+    iconSize:[16,16],iconAnchor:[8,8]
+  });
+  L.marker([lat,lng],{icon}).bindPopup(`<b style="font-family:Syne;color:${result.risk_color};font-size:13px">${result.risk_level} — ${result.risk_score}</b>`).addTo(markerLayer).openPopup();
+
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" style="width:15px;height:15px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg> ANALYZE RISK`;
+  btn.classList.remove('loading');
+}
+
+function showResult(d) {
+  const card = document.getElementById('resultCard');
+  card.classList.remove('hidden');
+
+  document.getElementById('rLevel').textContent = d.risk_level;
+  document.getElementById('rLevel').style.color  = d.risk_color;
+  document.getElementById('rScore').textContent  = d.risk_score;
+  document.getElementById('rScore').style.color  = d.risk_color;
+  document.getElementById('rProb').textContent   = `${d.accident_probability}%`;
+  document.getElementById('rProb').style.color   = d.risk_color;
+
+  drawGauge(d.risk_score, d.risk_color);
+
+  document.getElementById('rChips').innerHTML = d.contributing_factors.map(f =>
+    `<span class="chip ${f.impact}">${f.label}</span>`).join('');
+  document.getElementById('rRec').textContent = d.recommendation;
+}
+
+// ── GAUGE ──────────────────────────────
+function drawGauge(score, color) {
+  const cv = document.getElementById('gaugeCanvas');
+  const cx = cv.getContext('2d');
+  const W=cv.width, H=cv.height, ox=W/2, oy=H-10, R=78;
+  cx.clearRect(0,0,W,H);
+
+  // Track
+  cx.beginPath(); cx.arc(ox,oy,R,Math.PI,2*Math.PI);
+  cx.strokeStyle='#1a2a3f'; cx.lineWidth=10; cx.stroke();
+
+  // Fill
+  const end = Math.PI + (score/100)*Math.PI;
+  const grad = cx.createLinearGradient(ox-R,oy,ox+R,oy);
+  grad.addColorStop(0,'#2dff7f'); grad.addColorStop(.5,'#ffd32a'); grad.addColorStop(1,'#ff3b5c');
+  cx.beginPath(); cx.arc(ox,oy,R,Math.PI,end);
+  cx.strokeStyle=color; cx.lineWidth=10;
+  cx.shadowColor=color; cx.shadowBlur=14; cx.stroke(); cx.shadowBlur=0;
+
+  // Tick marks
+  for(let i=0;i<=10;i++){
+    const a=Math.PI+(i/10)*Math.PI;
+    const inner=R-14, outer=R-6;
+    cx.beginPath();
+    cx.moveTo(ox+inner*Math.cos(a), oy+inner*Math.sin(a));
+    cx.lineTo(ox+outer*Math.cos(a), oy+outer*Math.sin(a));
+    cx.strokeStyle='#243550'; cx.lineWidth=1.5; cx.shadowBlur=0; cx.stroke();
+  }
+}
+
+// ── GEOLOCATION ────────────────────────
+function geoLocate() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(p => {
+    lat=p.coords.latitude; lng=p.coords.longitude;
+    map.setView([lat,lng],14);
+    updateCoords();
+    if (activeTab==='heatmap') loadHeatmap();
+    loadHotspotRows();
+  });
+}
+
+// ── GEOCODE (address search) ────────────
+async function geocode() {
+  const q = document.getElementById('locSearch').value.trim();
+  if(!q) return;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+    const d = await r.json();
+    if(d.length>0){
+      lat=parseFloat(d[0].lat); lng=parseFloat(d[0].lon);
+      map.setView([lat,lng],13);
+      updateCoords();
+      if (activeTab==='heatmap') loadHeatmap();
+      loadHotspotRows();
+    }
+  } catch(e){ console.error(e); }
+}
+
+// ── HELPER ─────────────────────────────
+function riskColor(s) {
+  if(s<30)  return '#2dff7f';
+  if(s<55)  return '#ffd32a';
+  if(s<75)  return '#f5a623';
+  return '#ff3b5c';
+}
+</script>
+</body>
+</html>

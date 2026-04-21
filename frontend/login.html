@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TrafficGuard AI — Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:    #05080f;
+  --ink2:   #0b1120;
+  --ink3:   #111d30;
+  --ink4:   #162035;
+  --cyan:   #0df2c8;
+  --cyan2:  #08c9a6;
+  --red:    #ff3b5c;
+  --green:  #2dff7f;
+  --amber:  #f5a623;
+  --wire:   rgba(13,242,200,0.10);
+  --wire2:  rgba(13,242,200,0.05);
+  --txt:    #b8cfe8;
+  --txt2:   #4e6d8c;
+  --fmono:  'JetBrains Mono', monospace;
+  --fhead:  'Syne', sans-serif;
+}
+
+html, body {
+  height: 100%; overflow: hidden;
+  background: var(--ink);
+  color: var(--txt);
+  font-family: var(--fmono);
+}
+
+/* ── ANIMATED GRID BG ── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(var(--wire2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wire2) 1px, transparent 1px);
+  background-size: 48px 48px;
+  animation: gridShift 20s linear infinite;
+}
+@keyframes gridShift { from{background-position:0 0} to{background-position:48px 48px} }
+
+/* ── GLOW ORBS ── */
+.orb {
+  position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  filter: blur(80px); opacity: .18;
+}
+.orb1 { width:500px; height:500px; background:var(--cyan); top:-120px; left:-100px; animation: drift1 14s ease-in-out infinite alternate; }
+.orb2 { width:400px; height:400px; background:#4d6bff; bottom:-100px; right:-80px;  animation: drift2 18s ease-in-out infinite alternate; }
+.orb3 { width:300px; height:300px; background:var(--red); bottom:20%; left:30%;    animation: drift3 12s ease-in-out infinite alternate; opacity:.08; }
+@keyframes drift1 { to{transform:translate(60px,80px)} }
+@keyframes drift2 { to{transform:translate(-40px,-60px)} }
+@keyframes drift3 { to{transform:translate(30px,-50px)} }
+
+/* ── NOISE GRAIN ── */
+body::before {
+  content:''; position:fixed; inset:0; z-index:9998; pointer-events:none; opacity:.022;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── SCAN LINE ── */
+.scanline {
+  position: fixed; inset: 0; z-index: 9997; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+
+/* ── SPLIT LAYOUT ── */
+.wrap {
+  position: relative; z-index: 10;
+  display: grid; grid-template-columns: 1fr 1fr;
+  height: 100vh;
+}
+
+/* ── LEFT SIDE: BRAND PANEL ── */
+.brand-side {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; padding: 60px;
+  border-right: 1px solid var(--wire);
+}
+
+/* animated road lines */
+.road-anim {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.road-line {
+  position: absolute; left: 50%; width: 2px;
+  background: linear-gradient(180deg, transparent, var(--cyan), transparent);
+  opacity: 0; animation: roadFlow 3s linear infinite;
+}
+.road-line:nth-child(1)  { height: 80px; animation-delay: 0s;    left: 15%; }
+.road-line:nth-child(2)  { height: 60px; animation-delay: .4s;   left: 25%; }
+.road-line:nth-child(3)  { height: 100px; animation-delay: .8s;  left: 40%; }
+.road-line:nth-child(4)  { height: 70px; animation-delay: 1.2s;  left: 55%; }
+.road-line:nth-child(5)  { height: 90px; animation-delay: 1.6s;  left: 70%; }
+.road-line:nth-child(6)  { height: 50px; animation-delay: 2.0s;  left: 82%; }
+.road-line:nth-child(7)  { height: 65px; animation-delay: 2.4s;  left: 10%; }
+.road-line:nth-child(8)  { height: 85px; animation-delay: 2.8s;  left: 90%; }
+@keyframes roadFlow {
+  0%   { top: -120px; opacity: 0; }
+  10%  { opacity: .6; }
+  90%  { opacity: .6; }
+  100% { top: 110%; opacity: 0; }
+}
+
+/* city silhouette bottom */
+.city-svg {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  opacity: .12;
+}
+
+.brand-logo {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 48px;
+}
+.brand-hex {
+  width: 52px; height: 52px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-hex::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(13,242,200,.08);
+  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  border: 1px solid var(--cyan);
+  animation: hexPulse 2.5s ease-in-out infinite;
+}
+@keyframes hexPulse { 0%,100%{box-shadow:0 0 0 0 rgba(13,242,200,.2)} 50%{box-shadow:0 0 0 8px rgba(13,242,200,0)} }
+.brand-hex svg { width: 24px; height: 24px; z-index: 1; }
+
+.brand-name {
+  font-family: var(--fhead); font-size: 28px; font-weight: 800;
+  color: #fff; letter-spacing: .5px; line-height: 1;
+}
+.brand-name em { color: var(--cyan); font-style: normal; }
+.brand-tagline { font-size: 9px; letter-spacing: 3px; color: var(--txt2); margin-top: 4px; text-transform: uppercase; }
+
+.brand-headline {
+  font-family: var(--fhead); font-size: 42px; font-weight: 800;
+  color: #fff; line-height: 1.1; margin-bottom: 20px;
+  letter-spacing: -.5px;
+}
+.brand-headline span { color: var(--cyan); }
+
+.brand-desc {
+  font-size: 13px; line-height: 1.7; color: var(--txt);
+  max-width: 400px; margin-bottom: 40px;
+}
+
+.brand-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.bstat {
+  background: var(--wire2); border: 1px solid var(--wire);
+  border-radius: 3px; padding: 14px 12px;
+}
+.bstat-val {
+  font-family: var(--fhead); font-size: 22px; font-weight: 700;
+  color: var(--cyan); line-height: 1;
+}
+.bstat-lbl { font-size: 8px; letter-spacing: 1.5px; color: var(--txt2); margin-top: 3px; text-transform: uppercase; }
+
+/* ── RIGHT SIDE: LOGIN FORM ── */
+.login-side {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 70px; background: rgba(11,17,32,.5);
+}
+
+.login-box { width: 100%; max-width: 380px; }
+
+.login-greeting {
+  font-family: var(--fhead); font-size: 28px; font-weight: 800;
+  color: #fff; margin-bottom: 6px;
+}
+.login-sub {
+  font-size: 11px; letter-spacing: 2px; color: var(--txt2);
+  text-transform: uppercase; margin-bottom: 36px;
+}
+
+/* ── TAB SWITCHER ── */
+.auth-tabs {
+  display: flex; background: var(--ink3); border: 1px solid var(--wire);
+  border-radius: 3px; padding: 3px; margin-bottom: 28px;
+}
+.auth-tab {
+  flex: 1; padding: 8px; text-align: center;
+  font-family: var(--fmono); font-size: 10px; letter-spacing: 2px;
+  color: var(--txt2); cursor: pointer; border-radius: 2px; transition: all .2s;
+  border: none; background: transparent; text-transform: uppercase;
+}
+.auth-tab.active {
+  background: var(--cyan); color: var(--ink); font-weight: 500;
+}
+
+/* ── FORM ── */
+.form-panel { display: none; }
+.form-panel.active { display: block; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.fg { margin-bottom: 16px; position: relative; }
+.fgl {
+  display: block; font-size: 8px; letter-spacing: 2px;
+  color: var(--txt2); text-transform: uppercase; margin-bottom: 6px;
+}
+.finp {
+  width: 100%; background: var(--ink3);
+  border: 1px solid var(--wire); border-radius: 2px;
+  color: var(--txt); padding: 10px 38px 10px 12px;
+  font-family: var(--fmono); font-size: 12px;
+  outline: none; transition: all .25s;
+}
+.finp:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(13,242,200,.07), 0 0 16px rgba(13,242,200,.1);
+}
+.finp::placeholder { color: var(--txt2); font-size: 11px; }
+.finp-icon {
+  position: absolute; right: 11px; top: 50%; transform: translateY(4px);
+  color: var(--txt2); pointer-events: none;
+}
+.finp-icon svg { width: 14px; height: 14px; }
+
+.eye-btn {
+  position: absolute; right: 11px; top: 50%; transform: translateY(4px);
+  background: none; border: none; color: var(--txt2); cursor: pointer; padding: 0;
+  transition: color .2s;
+}
+.eye-btn:hover { color: var(--cyan); }
+.eye-btn svg { width: 14px; height: 14px; }
+
+.row2-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* strength bar */
+.strength-bar {
+  display: flex; gap: 3px; margin-top: 6px; height: 3px;
+}
+.strength-seg {
+  flex: 1; border-radius: 1px; background: var(--ink4); transition: background .3s;
+}
+
+.form-opts {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 22px; margin-top: -4px;
+}
+.check-wrap { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.check-wrap input[type=checkbox] { accent-color: var(--cyan); cursor: pointer; }
+.check-lbl { font-size: 10px; color: var(--txt2); letter-spacing: .5px; }
+.flink { font-size: 10px; color: var(--cyan); text-decoration: none; transition: opacity .2s; }
+.flink:hover { opacity: .7; }
+
+/* submit button */
+.btn-submit {
+  width: 100%; padding: 12px; border: none; border-radius: 2px; cursor: pointer;
+  background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+  font-family: var(--fhead); font-size: 14px; font-weight: 800;
+  letter-spacing: 3px; color: var(--ink);
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  position: relative; overflow: hidden; transition: all .25s;
+}
+.btn-submit::before {
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transition: left .5s;
+}
+.btn-submit:hover::before { left: 100%; }
+.btn-submit:hover { box-shadow: 0 0 28px rgba(13,242,200,.4); transform: translateY(-1px); }
+.btn-submit svg { width: 15px; height: 15px; }
+
+/* divider */
+.divider {
+  display: flex; align-items: center; gap: 12px; margin: 20px 0;
+}
+.divider-line { flex: 1; height: 1px; background: var(--wire); }
+.divider-txt { font-size: 9px; letter-spacing: 2px; color: var(--txt2); text-transform: uppercase; }
+
+/* social btns */
+.social-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-social {
+  padding: 9px; background: var(--ink3); border: 1px solid var(--wire);
+  border-radius: 2px; color: var(--txt); font-family: var(--fmono); font-size: 10px;
+  letter-spacing: 1px; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 7px; transition: all .2s;
+}
+.btn-social:hover { border-color: var(--cyan); color: var(--cyan); background: rgba(13,242,200,.05); }
+.btn-social svg { width: 14px; height: 14px; }
+
+/* success state */
+.success-overlay {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+}
+.success-overlay.show { display: flex; animation: fadeIn .4s ease; }
+.success-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 24px rgba(45,255,127,.3);
+  animation: ringPop .4s ease;
+}
+@keyframes ringPop { from{transform:scale(.6);opacity:0} to{transform:scale(1);opacity:1} }
+.success-ring svg { width: 28px; height: 28px; }
+.success-title { font-family: var(--fhead); font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.success-msg { font-size: 11px; color: var(--txt2); margin-bottom: 24px; line-height: 1.6; }
+.btn-enter {
+  padding: 10px 28px; background: var(--green); border: none; border-radius: 2px;
+  font-family: var(--fhead); font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  color: var(--ink); cursor: pointer; transition: all .2s;
+}
+.btn-enter:hover { box-shadow: 0 0 20px rgba(45,255,127,.4); transform: translateY(-1px); }
+
+/* error msg */
+.err-msg {
+  font-size: 10px; color: var(--red); letter-spacing: .5px;
+  margin-top: -10px; margin-bottom: 12px; display: none;
+}
+.err-msg.show { display: block; animation: fadeIn .2s ease; }
+
+/* bottom note */
+.login-footer {
+  margin-top: 24px; text-align: center;
+  font-size: 9px; letter-spacing: 1px; color: var(--txt2);
+}
+.login-footer a { color: var(--cyan); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="scanline"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="wrap">
+
+  <!-- ── BRAND SIDE ── -->
+  <div class="brand-side">
+    <div class="road-anim">
+      <div class="road-line"></div><div class="road-line"></div>
+      <div class="road-line"></div><div class="road-line"></div>
+      <div class="road-line"></div><div class="road-line"></div>
+      <div class="road-line"></div><div class="road-line"></div>
+    </div>
+
+    <!-- city silhouette -->
+    <svg class="city-svg" viewBox="0 0 900 200" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax slice">
+      <rect x="0"   y="100" width="60"  height="100" fill="#0df2c8"/>
+      <rect x="10"  y="70"  width="20"  height="30"  fill="#0df2c8"/>
+      <rect x="20"  y="50"  width="5"   height="20"  fill="#0df2c8"/>
+      <rect x="70"  y="60"  width="50"  height="140" fill="#0df2c8"/>
+      <rect x="85"  y="30"  width="15"  height="30"  fill="#0df2c8"/>
+      <rect x="91"  y="10"  width="3"   height="20"  fill="#0df2c8"/>
+      <rect x="130" y="90"  width="40"  height="110" fill="#0df2c8"/>
+      <rect x="180" y="50"  width="55"  height="150" fill="#0df2c8"/>
+      <rect x="190" y="20"  width="12"  height="30"  fill="#0df2c8"/>
+      <rect x="245" y="80"  width="35"  height="120" fill="#0df2c8"/>
+      <rect x="290" y="110" width="45"  height="90"  fill="#0df2c8"/>
+      <rect x="345" y="40"  width="60"  height="160" fill="#0df2c8"/>
+      <rect x="360" y="10"  width="20"  height="30"  fill="#0df2c8"/>
+      <rect x="368" y="0"   width="4"   height="10"  fill="#0df2c8"/>
+      <rect x="415" y="70"  width="40"  height="130" fill="#0df2c8"/>
+      <rect x="465" y="50"  width="55"  height="150" fill="#0df2c8"/>
+      <rect x="530" y="95"  width="35"  height="105" fill="#0df2c8"/>
+      <rect x="575" y="35"  width="50"  height="165" fill="#0df2c8"/>
+      <rect x="588" y="5"   width="14"  height="30"  fill="#0df2c8"/>
+      <rect x="635" y="75"  width="40"  height="125" fill="#0df2c8"/>
+      <rect x="685" y="55"  width="55"  height="145" fill="#0df2c8"/>
+      <rect x="750" y="90"  width="35"  height="110" fill="#0df2c8"/>
+      <rect x="795" y="45"  width="50"  height="155" fill="#0df2c8"/>
+      <rect x="855" y="80"  width="45"  height="120" fill="#0df2c8"/>
+      <rect x="0"   y="195" width="900" height="5"   fill="#0df2c8" opacity=".4"/>
+    </svg>
+
+    <!-- Brand -->
+    <div class="brand-logo">
+      <div class="brand-hex">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 20h20L12 2z" stroke="#0df2c8" stroke-width="1.8"/>
+          <path d="M12 9v5M12 16.5v.5" stroke="#0df2c8" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">TrafficGuard <em>AI</em></div>
+        <div class="brand-tagline">Smart City Accident Risk Prediction</div>
+      </div>
+    </div>
+
+    <div class="brand-headline">
+      Predict Risk.<br/><span>Save Lives.</span>
+    </div>
+
+    <p class="brand-desc">
+      AI-powered traffic intelligence for smart cities. Real-time accident risk prediction using machine learning, weather data, and live traffic density — helping authorities and commuters make smarter decisions.
+    </p>
+
+    <div class="brand-stats">
+      <div class="bstat">
+        <div class="bstat-val">91.4%</div>
+        <div class="bstat-lbl">Model Accuracy</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val">4,917</div>
+        <div class="bstat-lbl">Records Trained</div>
+      </div>
+      <div class="bstat">
+        <div class="bstat-val">23</div>
+        <div class="bstat-lbl">Risk Zones</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOGIN SIDE ── -->
+  <div class="login-side">
+    <div class="login-box">
+
+      <!-- success overlay (hidden by default) -->
+      <div class="success-overlay" id="successOverlay">
+        <div class="success-ring">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2dff7f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="success-title" id="successTitle">Access Granted</div>
+        <div class="success-msg" id="successMsg">Identity verified. Initializing TrafficGuard command interface…</div>
+        <button class="btn-enter" onclick="enterDashboard()">ENTER DASHBOARD →</button>
+      </div>
+
+      <!-- form area -->
+      <div id="formArea">
+        <div class="login-greeting" id="greeting">Welcome Back</div>
+        <div class="login-sub" id="greetingSub">Authenticate to access the system</div>
+
+        <!-- tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+          <button class="auth-tab"        onclick="switchTab('signup')">Register</button>
+        </div>
+
+        <!-- ── LOGIN FORM ── -->
+        <div class="form-panel active" id="panelLogin">
+          <div class="fg">
+            <label class="fgl">Email Address</label>
+            <input type="email" id="loginEmail" class="finp" placeholder="you@smartcity.gov"/>
+            <div class="finp-icon">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label class="fgl">Password</label>
+            <input type="password" id="loginPass" class="finp" placeholder="Enter password" style="padding-right:38px"/>
+            <button class="eye-btn" onclick="toggleEye('loginPass',this)">
+              <svg viewBox="0 0 16 16" fill="none" class="eye-show"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+          </div>
+
+          <div class="err-msg" id="loginErr">⚠ Invalid credentials. Please try again.</div>
+
+          <div class="form-opts">
+            <label class="check-wrap">
+              <input type="checkbox" id="rememberMe"/>
+              <span class="check-lbl">Remember me</span>
+            </label>
+            <a href="#" class="flink" onclick="forgotPassword()">Forgot password?</a>
+          </div>
+
+          <button class="btn-submit" onclick="handleLogin()">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            SIGN IN
+          </button>
+
+          <div class="divider"><div class="divider-line"></div><span class="divider-txt">or continue with</span><div class="divider-line"></div></div>
+
+          <div class="social-row">
+            <button class="btn-social" onclick="socialLogin('Google')">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 12A10 10 0 112 12h10v2H4.2A8 8 0 1020 11h-8V9h10z" fill="currentColor"/></svg>
+              Google
+            </button>
+            <button class="btn-social" onclick="socialLogin('GitHub')">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.68-.22.68-.48v-1.7C6.73 19.9 6.14 18 6.14 18c-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85.004 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.93.36.31.68.92.68 1.85V21c0 .27.18.58.69.48A10 10 0 0022 12z"/></svg>
+              GitHub
+            </button>
+          </div>
+        </div>
+
+        <!-- ── SIGNUP FORM ── -->
+        <div class="form-panel" id="panelSignup">
+          <div class="row2-form">
+            <div class="fg">
+              <label class="fgl">First Name</label>
+              <input type="text" id="signFirst" class="finp" placeholder="Tanishka"/>
+            </div>
+            <div class="fg">
+              <label class="fgl">Last Name</label>
+              <input type="text" id="signLast" class="finp" placeholder="Sharma"/>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label class="fgl">Email Address</label>
+            <input type="email" id="signEmail" class="finp" placeholder="you@smartcity.gov"/>
+            <div class="finp-icon">
+              <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label class="fgl">Role / Department</label>
+            <select id="signRole" class="finp">
+              <option value="">Select your role…</option>
+              <option>Traffic Authority</option>
+              <option>City Planner</option>
+              <option>Emergency Services</option>
+              <option>Research Analyst</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="fg">
+            <label class="fgl">Password</label>
+            <input type="password" id="signPass" class="finp" placeholder="Create strong password" oninput="checkStrength(this.value)"/>
+            <button class="eye-btn" onclick="toggleEye('signPass',this)">
+              <svg viewBox="0 0 16 16" fill="none" class="eye-show"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+            <div class="strength-bar">
+              <div class="strength-seg" id="s1"></div>
+              <div class="strength-seg" id="s2"></div>
+              <div class="strength-seg" id="s3"></div>
+              <div class="strength-seg" id="s4"></div>
+            </div>
+          </div>
+
+          <div class="err-msg" id="signErr">⚠ Please fill all required fields correctly.</div>
+
+          <button class="btn-submit" onclick="handleSignup()" style="margin-top:4px">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 7a4 4 0 110 8 4 4 0 010-8zM20 8v6M23 11h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            CREATE ACCOUNT
+          </button>
+        </div>
+
+        <div class="login-footer">
+          Protected by TrafficGuard Security &nbsp;·&nbsp;
+          <a href="#">Privacy Policy</a> &nbsp;·&nbsp;
+          <a href="#">Terms of Use</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── Tab switch ─────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('panelLogin').classList.toggle('active', tab==='login');
+  document.getElementById('panelSignup').classList.toggle('active', tab==='signup');
+  document.getElementById('greeting').textContent    = tab==='login' ? 'Welcome Back' : 'Create Account';
+  document.getElementById('greetingSub').textContent = tab==='login' ? 'Authenticate to access the system' : 'Register for system access';
+  hideErrors();
+}
+
+// ── Eye toggle ─────────────────────────────────
+function toggleEye(id, btn) {
+  const inp = document.getElementById(id);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('svg').style.opacity = show ? '0.4' : '1';
+}
+
+// ── Password strength ──────────────────────────
+function checkStrength(v) {
+  const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
+  let score = 0;
+  if (v.length >= 6)  score++;
+  if (v.length >= 10) score++;
+  if (/[A-Z]/.test(v) && /[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const cols = ['#ff3b5c','#f5a623','#ffd32a','#2dff7f'];
+  segs.forEach((s,i) => s.style.background = i < score ? cols[score-1] : 'var(--ink4)');
+}
+
+// ── Validation ─────────────────────────────────
+function validate(email, pass) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && pass.length >= 4;
+}
+
+function hideErrors() {
+  document.getElementById('loginErr').classList.remove('show');
+  document.getElementById('signErr').classList.remove('show');
+}
+
+// ── Login handler ──────────────────────────────
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginErr');
+
+  if (!validate(email, pass)) {
+    err.classList.add('show');
+    document.getElementById('loginEmail').style.borderColor = '#ff3b5c';
+    setTimeout(() => document.getElementById('loginEmail').style.borderColor = '', 2000);
+    return;
+  }
+  err.classList.remove('show');
+
+  // Simulate auth — in real app, call your backend
+  const btn = document.querySelector('#panelLogin .btn-submit');
+  btn.textContent = 'AUTHENTICATING…'; btn.style.opacity = '.7'; btn.disabled = true;
+
+  setTimeout(() => {
+    showSuccess(`Welcome back, ${email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)}!`, 'Identity verified. Initializing TrafficGuard command interface…');
+  }, 1400);
+}
+
+// ── Signup handler ─────────────────────────────
+function handleSignup() {
+  const first = document.getElementById('signFirst').value.trim();
+  const last  = document.getElementById('signLast').value.trim();
+  const email = document.getElementById('signEmail').value.trim();
+  const pass  = document.getElementById('signPass').value;
+  const role  = document.getElementById('signRole').value;
+  const err   = document.getElementById('signErr');
+
+  if (!first || !last || !validate(email, pass) || !role) {
+    err.classList.add('show');
+    return;
+  }
+  err.classList.remove('show');
+
+  const btn = document.querySelector('#panelSignup .btn-submit');
+  btn.textContent = 'CREATING ACCOUNT…'; btn.style.opacity = '.7'; btn.disabled = true;
+
+  setTimeout(() => {
+    showSuccess(`Account Created, ${first}!`, `Welcome to TrafficGuard AI. Your ${role} profile is ready. Redirecting to dashboard…`);
+  }, 1600);
+}
+
+// ── Social login ───────────────────────────────
+function socialLogin(provider) {
+  const btn = event.currentTarget;
+  btn.textContent = `Connecting…`; btn.disabled = true;
+  setTimeout(() => showSuccess('Access Granted', `${provider} authentication successful. Loading dashboard…`), 1200);
+}
+
+// ── Success screen ─────────────────────────────
+function showSuccess(title, msg) {
+  document.getElementById('formArea').style.display = 'none';
+  const s = document.getElementById('successOverlay');
+  s.classList.add('show');
+  document.getElementById('successTitle').textContent = title;
+  document.getElementById('successMsg').textContent   = msg;
+}
+
+// ── Enter dashboard ────────────────────────────
+function enterDashboard() {
+  sessionStorage.setItem("tg_auth", "1");
+  window.location.href = 'index.html';
+}
+
+// ── Forgot password ────────────────────────────
+function forgotPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  alert(email ? `Password reset link sent to: ${email}` : 'Enter your email first, then click Forgot Password.');
+}
+
+// ── Enter key support ──────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const loginActive = document.getElementById('panelLogin').classList.contains('active');
+  loginActive ? handleLogin() : handleSignup();
+});
+</script>
+</body>
+</html>
